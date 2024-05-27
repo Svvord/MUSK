@@ -31,7 +31,7 @@ _Downstream Evaluation_:
 
 First clone the repo and cd into the directory:
 ```shell
-git clone https://github.com/jinxixiang/MUSK.git
+git clone https://github.com/lilab-stanford/MUSK
 cd MUSK
 ```
 
@@ -52,7 +52,7 @@ pip install -e .
 
 Please refer to `./musk/demo.ipynb` for a demonstration. 
 
-Ensure you download the [model weight](https://github.com/jinxixiang/MUSK) and [tokenizer](https://github.com/jinxixiang/MUSK) beforehand, and place them in the `./musk/models` directory.
+Ensure you download the [model weight](https://github.com/lilab-stanford/MUSK) and [tokenizer](https://github.com/lilab-stanford/MUSK) beforehand, and place them in the `./musk/models` directory.
 
 
 ```shell
@@ -121,7 +121,7 @@ The evaluated dataset includes:
 * BRACS (3 cls): [Download Link](https://www.bracs.icar.cnr.it/download/)
 * BRACS (6 cls): [Download Link](https://www.bracs.icar.cnr.it/download/)
 
-First, download the necessary datasets. For code demonstration, we prepare the corss-modal retrieval dataset [here](https://github.com/jinxixiang/MUSK). Download and unzip it, then, change the directory paths of the datasets in `./benchmarks/clip_benchmark/cli.py` (from `line 230` to `line 255`) so that the code can locate them. The code will automatically extract features and perform the necessary evaluation.
+First, download the necessary datasets. For code demonstration, we prepare the corss-modal retrieval dataset [here](https://github.com/lilab-stanford/MUSK). Download and unzip it, then, change the directory paths of the datasets in `./benchmarks/clip_benchmark/cli.py` (from `line 230` to `line 255`) so that the code can locate them. The code will automatically extract features and perform the necessary evaluation.
 
 
 The main file is `clip_benchmark.cli` and includes the following options:
