@@ -4,12 +4,9 @@ import importlib
 from einops import rearrange
 import torch.nn.functional as F
 
-
-
 """
-We propose to use vision-language features for TMB prediction.
+We propose to use vision-language features for Outcome prediction.
 """
-
 
 def get_obj_from_str(image_mil_name, reload=False):
     module, cls = image_mil_name.rsplit(".", 1)
@@ -32,66 +29,6 @@ class Pooler(nn.Module):
         pooled_output = self.dense(cls_rep)
         # pooled_output = self.activation(pooled_output)
         return pooled_output
-
-
-# class AttentionFusion(nn.Module):
-#     def __init__(self, feat_dim, dropout_rate=0.5):
-#         super(AttentionFusion, self).__init__()
-#         self.attn = nn.Linear(feat_dim*2, 2)  # Output 2 weights: one for vision, one for report
-#         self.dropout = nn.Dropout(dropout_rate)
-
-#     def forward(self, feat_vision, feat_report):
-        
-#         combined_features = torch.cat((feat_vision, feat_report), dim=1)  # Concatenate along feature dimension
-#         weights = F.softmax(self.attn(combined_features), dim=1)  # Get weights for vision and report
-        
-#         vision_weight = weights[:, 0].unsqueeze(1)  # Reshape to [batch_size, 1]
-#         report_weight = weights[:, 1].unsqueeze(1)  # Reshape to [batch_size, 1]
-
-#         global_feat = vision_weight * feat_vision + report_weight * feat_report
-#         global_feat = self.dropout(global_feat)
-#         return global_feat
-    
-
-# class MMClassifier(nn.Module):
-#     def __init__(self, image_mil_name, mil_params, feat_dim, num_classes, dropout_rate=0.5):
-#         super(MMClassifier, self).__init__()
-#         target_dim = mil_params['hidden_feat']
-#         self.image_mil = get_obj_from_str(image_mil_name)(feat_dim=feat_dim, n_classes=num_classes, **mil_params)
-#         self.feat_dim = feat_dim
-#         self.fc_vision = Pooler(target_dim, target_dim)
-#         self.fc_report = Pooler(feat_dim, target_dim)
-#         # self.fc_fusion = nn.Linear(target_dim * 2, target_dim)
-        
-#         self.classifier_vision = nn.Linear(target_dim, num_classes)
-#         self.classifier_report = nn.Linear(target_dim, num_classes)
-#         self.classifier_final = nn.Linear(target_dim, num_classes)
-
-#         self.dropout = nn.Dropout(dropout_rate)
-#         self.attention = AttentionFusion(target_dim, dropout_rate)
-
-#     def forward(self, batch):
-#         images, reports, _, y = batch
-#         feat_vision = self.fc_vision(self.image_mil((images, None), return_global_feature=True)[0]) if images.any() != 0 else None
-#         feat_report = self.fc_report(reports) if reports.any() != 0 else None
-        
-#         results_dict = dict()
-
-#         if feat_vision is not None and feat_report is not None:
-#             global_feat = self.attention(feat_vision, feat_report)
-#             logits_vision = self.classifier_vision(feat_vision)                
-#             logits_report = self.classifier_report(feat_report)
-#             results_dict.update({"logits_vision": logits_vision, "logits_report": logits_report})
-
-#         elif feat_vision is not None:
-#             global_feat = feat_vision
-#         else:
-#             global_feat = feat_report
-
-#         logits = self.classifier_final(global_feat)
-#         return logits, results_dict
-
-
 
 
 class MMClassifier(nn.Module):

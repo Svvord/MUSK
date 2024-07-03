@@ -166,8 +166,8 @@ class WSIDataModule(LightningDataModule):
         if self.dist:
             self.samplers = [DistributedSampler(dataset, shuffle=True) for dataset in self.datasets]
         else:
-            # self.samplers = [BalancedSampler(labels_list), None, None]  # balanced samplers
-            self.samplers = [None, None, None]  # balanced samplers
+            self.samplers = [BalancedSampler(labels_list), None, None]  # balanced samplers
+            # self.samplers = [None, None, None]  # balanced samplers
 
     def train_dataloader(self):
         loader = DataLoader(
