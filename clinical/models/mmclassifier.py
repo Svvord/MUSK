@@ -5,7 +5,7 @@ from einops import rearrange
 import torch.nn.functional as F
 
 """
-We propose to use vision-language features for Outcome prediction.
+We propose to use vision-language features for outcome prediction.
 """
 
 def get_obj_from_str(image_mil_name, reload=False):

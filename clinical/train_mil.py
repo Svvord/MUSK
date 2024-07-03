@@ -141,7 +141,7 @@ def main():
                 save_path = f"./workspace/models/{fname}/{proj_name}/seed{seed}/fold_{split_k}"
                 setup_workspace(save_path)
 
-                model = MILModel(config_yaml, save_path=save_path, encoder=None)
+                model = MILModel(config_yaml, save_path=save_path)
                 trainer = prepare_trainer(config_yaml, num_gpus, workspace)
 
                 trainer.fit(model, datamodule=dm, ckpt_path=None)

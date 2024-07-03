@@ -21,17 +21,11 @@ def get_obj_from_str(string, reload=False):
 
 
 class MILModel(pl.LightningModule):
-    def __init__(self, config, save_path, encoder=None):
+    def __init__(self, config, save_path):
         super().__init__()
         self.config = config
         self.save_path = save_path
-
-        self.encoder = encoder
-        if self.encoder is not None:
-            for m in self.encoder.parameters():
-                m.requires_grad = False
-            self.encoder.eval()
-            
+        
         self.criterion = get_obj_from_str(
             self.config["Loss"]["name"]
             )(**self.config["Loss"]["params"])
@@ -46,21 +40,8 @@ class MILModel(pl.LightningModule):
         return self.model(x)
 
     def compute_loss(self, batch):
-        
         patient_id, img, report, pfs, status = batch
         
-        # encoder reports online
-        if self.encoder is not None:
-            with torch.inference_mode():
-                report = self.encoder(
-                        text_description=report['token_ids'].to(self.device),
-                        padding_mask=report['pad_mask'].to(self.device),
-                        return_global=True,
-                        with_head=False,
-                        out_norm=True
-                    )[1]  # return (vision_cls, text_cls)
-            report = report.clone()  # to avoid require_grad faults
-
         batch = (img, report, pfs, status)
         logits, result_dict = self(batch)
 
@@ -169,21 +150,6 @@ class MILModel(pl.LightningModule):
 
         self.lr_scheduler = scheduler_cls(optim, **conf_optim["lr_scheduler"]["params"])
         return optim
-
-
-@torch.no_grad()
-def concat_all_gather(tensor):
-    """
-    Performs all_gather operation on the provided tensors.
-    *** Warning ***: torch.distributed.all_gather has no gradient.
-    """
-    tensors_gather = [torch.ones_like(tensor)
-                      for _ in range(torch.distributed.get_world_size())]
-    torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
-
-    output = torch.cat(tensors_gather, dim=0)
-    return output
-
 
 def compute_c_index(risks, durations, events):
 
