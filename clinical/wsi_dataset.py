@@ -166,8 +166,8 @@ class WSIDataModule(LightningDataModule):
         if self.dist:
             self.samplers = [DistributedSampler(dataset, shuffle=True) for dataset in self.datasets]
         else:
-            self.samplers = [BalancedSampler(labels_list), None, None]  # balanced samplers
-            # self.samplers = [None, None, None]  # balanced samplers
+            # self.samplers = [BalancedSampler(labels_list), None, None]  # balanced samplers
+            self.samplers = [None, None, None]  # balanced samplers
 
     def train_dataloader(self):
         loader = DataLoader(
@@ -196,28 +196,6 @@ class WSIDataModule(LightningDataModule):
             num_workers=self.num_workers,
         )
         return loader
-
-
-
-def xlm_tokenizer(txt, tokenizer, max_len=64):
-    try:
-        tokens = tokenizer.encode(txt)
-    except:
-        print(txt)
-
-    # tokens = tokens[1:-1]  # remove bos and eos
-
-    if len(tokens) > max_len - 2:
-        tokens = tokens[:max_len - 2]
-
-    tokens = [tokenizer.bos_token_id] + tokens[:] + [tokenizer.eos_token_id] # add eos and bos;
-                                                                             # this is a bug with 2 bos/eos token; but it does NOT degrade the performance.
-    num_tokens = len(tokens)
-    padding_mask = [0] * num_tokens + [1] * (max_len - num_tokens)
-
-    text_tokens = tokens + [tokenizer.pad_token_id] * (max_len - num_tokens)
-    return text_tokens, padding_mask
-
 
 class BalancedSampler(Sampler):
     def __init__(self, dataset_labels):

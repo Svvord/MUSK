@@ -55,33 +55,33 @@ class MILModel(pl.LightningModule):
         if 'logits_report' in result_dict.keys():
             loss += 0.3 * self.criterion(result_dict['logits_report'], pfs, status)
 
-        # Process logits by patient
-        unique_patient_ids = torch.unique(patient_id)
-        merged_logits = []
-        merged_pfs = []
-        merged_status = []
+        # # Process logits by patient
+        # unique_patient_ids = torch.unique(patient_id)
+        # merged_logits = []
+        # merged_pfs = []
+        # merged_status = []
 
-        for pid in unique_patient_ids:
-            indices = (patient_id == pid).nonzero(as_tuple=True)[0]
-            patient_logits = logits[indices]
-            patient_status = status[indices][0]  # Assuming status is the same for all samples of the same patient
-            patient_pfs = pfs[indices][0]  # Assuming pfs is the same for all samples of the same patient
-            merged_logits.append(patient_logits.max())
-            merged_pfs.append(patient_pfs)
-            merged_status.append(patient_status)
+        # for pid in unique_patient_ids:
+        #     indices = (patient_id == pid).nonzero(as_tuple=True)[0]
+        #     patient_logits = logits[indices]
+        #     patient_status = status[indices][0]  # Assuming status is the same for all samples of the same patient
+        #     patient_pfs = pfs[indices][0]  # Assuming pfs is the same for all samples of the same patient
+        #     merged_logits.append(patient_logits.max())
+        #     merged_pfs.append(patient_pfs)
+        #     merged_status.append(patient_status)
         
-        merged_logits = torch.stack(merged_logits)
-        merged_pfs = torch.stack(merged_pfs)
-        merged_status = torch.stack(merged_status)
+        # merged_logits = torch.stack(merged_logits)
+        # merged_pfs = torch.stack(merged_pfs)
+        # merged_status = torch.stack(merged_status)
 
-        metrics = {
-            "loss": loss,
-            "risks": merged_logits,
-            "pfs": merged_pfs,
-            "status": merged_status
-        }
+        # metrics = {
+        #     "loss": loss,
+        #     "risks": merged_logits,
+        #     "pfs": merged_pfs,
+        #     "status": merged_status
+        # }
         
-        # metrics = {"loss": loss, "risks": logits, "pfs": pfs, "status": status}
+        metrics = {"loss": loss, "risks": logits, "pfs": pfs, "status": status}
         return metrics
 
     def training_step(self, batch, batch_idx):

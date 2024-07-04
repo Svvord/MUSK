@@ -5,7 +5,7 @@ from einops import rearrange
 import torch.nn.functional as F
 
 """
-We propose to use vision-language features for outcome prediction.
+We use vision-language features for outcome prediction.
 """
 
 def get_obj_from_str(image_mil_name, reload=False):
@@ -71,7 +71,8 @@ class MMClassifier(nn.Module):
             feat_report = self.fc_report(reports)
         
         results_dict = {}
-
+        
+        # multimodal 
         if feat_report is not None and feat_vision is not None:
             global_feat = feat_vision + feat_report
 
@@ -79,8 +80,18 @@ class MMClassifier(nn.Module):
             logits_vision = self.classifier_vision(feat_vision)
             logits_report = self.classifier_report(feat_report)
             results_dict.update({"logits_vision": logits_vision, "logits_report": logits_report})
+        # report-only
+        elif feat_report is not None:
+            global_feat = feat_report
+            logits_report = self.classifier_report(feat_report)
+            results_dict.update({"logits_report": logits_report})
+        # vision-only
+        elif feat_vision is not None:
+            logits_vision = self.classifier_vision(feat_vision)
+            global_feat = feat_vision
+            results_dict.update({"logits_vision": logits_vision})
         else:
-            global_feat = feat_vision if feat_vision is not None else feat_report
+            raise NotImplementedError
         
         logits = self.classifier_final(global_feat)
         
