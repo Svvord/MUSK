@@ -9,8 +9,8 @@ PROCESS_NUM=$((HOST_GPU_NUM * HOST_NUM))
 echo ${PROCESS_NUM}
 
 MODEL="pretrain_musk_large"
-LOG_DIR=./results/ablation_${MODEL}/log
-OUTPUT_DIR=./results/ablation_${MODEL}
+LOG_DIR=./results/${MODEL}/log
+OUTPUT_DIR=./results/${MODEL}
 
 accelerate launch --gpu_ids all --use_deepspeed --num_processes ${PROCESS_NUM} \
   --deepspeed_config_file zero2_config.json --mixed_precision bf16 \

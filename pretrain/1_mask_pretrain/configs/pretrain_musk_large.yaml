@@ -17,13 +17,13 @@ model:
   input_size: 384
   drop_path: 0.1
   max_text_len: 100
-  tokenizer: /mnt/radonc-li01/private/xiangjx/code/musk_v2/MUSK/musk/models/tokenizer.spm
+  tokenizer: /path/to/tokenizer.spm
 
 
 visual_tokenizer:
   tokenizer_model: vqkd_encoder_base_decoder_3x768x12_uni
   second_input_size: 384
-  tokenizer_weight: /mnt/radonc-li01/private/xiangjx/code/public/beit2/outputs/train_encoder_384_train_decoder_uni/checkpoint.pth
+  tokenizer_weight: /path/to/image_tokenizer.pth
   codebook_size: 8192
   codebook_dim: 32
 
@@ -47,6 +47,6 @@ dataset:
   num_workers: 8
   batch_size: 32
   pin_mem: true
-  image_dir: /mnt/radonc-li01/private/xiangjx/code/musk_v2/1_preprocess/outputs/tcga.tsv
-  text_dir: /mnt/radonc-li01/private/xiangjx/data/text_corpus/pubmed_abstracts.tsv
+  image_dir: /path/to/tcga.tsv
+  text_dir: /path/to/pubmed_text.tsv
 
