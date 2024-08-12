@@ -193,13 +193,6 @@ and more tasks in `./benchmarks/demo.ipynb`.
 
 ## Evaluation on Outcome Prediction
 
-Please refer to `./clinical/demo.ipynb` for demonstrations. 
-
-To reproduce the results, download the processed features for `IDH (subtyping)`[link](https://drive.google.com/file/d/1XfKB1qSjjujmQ4VwAGN5D9G6jt8bfyS6/view?usp=sharing) and `TCGA (prognosis)`[link](https://drive.google.com/file/d/1MLLT-iMMNACwR9TzcO4MfzDiF6nRiDn8/view?usp=sharing) into the `./clinical/workspace/data`, and then run `python3 train_mil.py`. 
-
-To switch tasks, modify the `fname` in `train_mil.py` to other configurations in the `configs` directory.
-
-
 
 This section reproduces the outcome prediction results presented in the paper. All evaluated tasks utilize a consistent training and evaluation pipeline:
 
@@ -208,6 +201,13 @@ This section reproduces the outcome prediction results presented in the paper. A
 3. **Preprocess the pathology reports** using GPT-4 to convert them into structured reports, as explained in the paper.
 4. **Extract report embeddings** using MUSK, with the structured reports (`./clinical/workspace/data/tcga_reports_gpt4.csv`) as inputs.
 5. **Finetune a linear regression model** that combines both image and report embeddings as inputs.  Run `python3 train_mil.py` in `./clinical`.
+
+
+Please refer to `./clinical/demo.ipynb` for demonstrations. 
+
+To reproduce the results, download the processed features for `IDH (subtyping)`[link](https://drive.google.com/file/d/1XfKB1qSjjujmQ4VwAGN5D9G6jt8bfyS6/view?usp=sharing) and `TCGA (prognosis)`[link](https://drive.google.com/file/d/1MLLT-iMMNACwR9TzcO4MfzDiF6nRiDn8/view?usp=sharing) into the `./clinical/workspace/data`, and then run `python3 train_mil.py`. 
+
+To switch tasks, modify the `fname` in `train_mil.py` to other configurations in the `configs` directory.
 
 
 
