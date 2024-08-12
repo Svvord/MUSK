@@ -29,7 +29,7 @@ def fix_seed(seed):
 
 if __name__ == "__main__":
     # Configs
-    fname = "config_prognosis_musk"
+    fname = "config_brain_IDH_musk"
     config_yaml = read_yaml(f"./configs/{fname}.yaml")
     for key, value in config_yaml.items():
         print(f"{key.ljust(30)}: {value}")
