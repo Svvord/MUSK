@@ -79,14 +79,14 @@ class VQKD(nn.Module):
             self.decoder_out_dim = 768
         
         # for pathology teacher
-        elif self.teacher_model_type == 'uni':
-            self.scaling_layer = ScalingLayerForIM()  # same as DINO
+        elif self.teacher_model_type == 'ctrans':
+            self.scaling_layer = ScalingLayerForIM()
             self.teacher_model = timm.create_model(
                 "vit_large_patch16_224", img_size=224, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
             )
             
-            local_dir = "/home/ubuntu/xiangjx2/models/uni/pytorch_model.bin"
-            self.teacher_model.load_state_dict(torch.load(local_dir, map_location="cpu"), strict=True)
+            # local_dir = "/path/to/ctrans"
+            # self.teacher_model.load_state_dict(torch.load(local_dir, map_location="cpu"), strict=True)
 
         else:
             # raise NotImplementedError
@@ -462,9 +462,9 @@ def vqkd_encoder_base_decoder_3x768x12_ctrans(pretrained=False, freeze_encoder=F
     decoder_config['num_classes'] = 0
     decoder_config['depth'] = 3
     # teacher settings
-    _ = kwargs.pop("teacher_model_type", "uni")
+    _ = kwargs.pop("teacher_model_type", "ctrans")
 
-    teacher_model_type = 'uni' if not as_tokenzer else 'None'
+    teacher_model_type = 'ctrans' if not as_tokenzer else 'None'
     decoder_out_dim = 1024
     
     model = VQKD(encoder_config, decoder_config, n_code, code_dim, teacher_model_type=teacher_model_type, 
