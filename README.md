@@ -193,7 +193,11 @@ and more tasks in `./benchmarks/demo.ipynb`.
 
 ## Evaluation on Outcome Prediction
 
-Please refer to `./clinical/demo.ipynb` for demonstrations. To reproduce the results, download the processed features for `IDH (subtyping)`[link](https://drive.google.com/file/d/1XfKB1qSjjujmQ4VwAGN5D9G6jt8bfyS6/view?usp=sharing) and `TCGA (prognosis)`[link](https://drive.google.com/file/d/1MLLT-iMMNACwR9TzcO4MfzDiF6nRiDn8/view?usp=sharing) into the `./clinical/workspace/data`, and then run `python3 train_mil.py`. To switch tasks, modify the `fname` in `train_mil.py` to other configurations in the `configs` directory.
+Please refer to `./clinical/demo.ipynb` for demonstrations. 
+
+To reproduce the results, download the processed features for `IDH (subtyping)`[link](https://drive.google.com/file/d/1XfKB1qSjjujmQ4VwAGN5D9G6jt8bfyS6/view?usp=sharing) and `TCGA (prognosis)`[link](https://drive.google.com/file/d/1MLLT-iMMNACwR9TzcO4MfzDiF6nRiDn8/view?usp=sharing) into the `./clinical/workspace/data`, and then run `python3 train_mil.py`. 
+
+To switch tasks, modify the `fname` in `train_mil.py` to other configurations in the `configs` directory.
 
 
 
