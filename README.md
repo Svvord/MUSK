@@ -198,7 +198,7 @@ This section reproduces the outcome prediction results presented in the paper. A
 1. **Preprocess the whole slide images** following the [CLAM](https://github.com/mahmoodlab/CLAM) method, which includes tissue segmentation and stitching.
 2. **Extract image embeddings** using MUSK.
 3. **Preprocess the pathology reports** using GPT-4 to convert them into structured reports, as explained in the paper.
-4. **Extract report embeddings** using MUSK, with the structured reports (`./clinical/workspace/data/tcga_reports_gpt4.csv`) as inputs.
+4. **Extract report embeddings** using MUSK as inputs.
 5. **Finetune a linear regression model** that combines both image and report embeddings as inputs.  Run `python3 train_mil.py` in `./clinical`.
 
 
