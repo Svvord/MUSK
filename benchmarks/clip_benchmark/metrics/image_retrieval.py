@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 from .zeroshot_retrieval import batchify, dataloader_with_indices, recall_at_k
+import numpy as np
 
 
 def evaluate(model, dataloader, device, amp=True, recall_k_list=[1, 3, 5]):
@@ -59,11 +60,13 @@ def evaluate(model, dataloader, device, amp=True, recall_k_list=[1, 3, 5]):
                     image=batch_images,
                     text_description=None,
                     padding_mask=None,
-                    return_global=True, 
-                    with_head=True, 
                     out_norm=True
                 )
                 image_features = outputs[0]
+
+            # CTransPath
+            elif 'swin' in model_name.lower():
+                image_features = model(batch_images)
 
             elif 'clipmodel' in model_name.lower():
                 image_features = model.get_image_features(batch_images)
@@ -81,6 +84,13 @@ def evaluate(model, dataloader, device, amp=True, recall_k_list=[1, 3, 5]):
     # concatenate all embeddings
     images_emb = torch.cat(batch_images_emb_list).float()
     image_labels = torch.cat(image_labels)
+    
+    # save image retrieval results for visualization
+    # save_root = "/mnt/sdd/vl_bertpath/4_evaluate_benchmark/vision_tasks/results/image_retrieval"
+    # cnt = len(list(glob.glob(f"{save_root}/*.pt")))
+    # torch.save(images_emb, f'{save_root}/embed_{cnt//2}.pt')
+    # torch.save(image_labels, f'{save_root}/label_{cnt//2}.pt')
+
     metrics = image_retrieval_metrics(images_emb, image_labels)
 
     return metrics
@@ -106,6 +116,20 @@ def image_retrieval_metrics(batch_images, labels):
 
     # Set the diagonal elements to a large value to exclude self-matching
     distances.fill_diagonal_(float('inf'))
+
+    # TODO: save similarity matrix for further investigations
+    save_dir = "/mnt/radonc-li01/private/xiangjx/code/musk_v2/5_eval_benchmarks/results/image_retrieval/bracs"
+    
+    sim_cnt = list(glob.glob(f"{save_dir}/sim_*"))
+    cnt = len(sim_cnt)
+    with open(f"{save_dir}/sim_{cnt}.npy", 'wb') as f:
+        np.save(f, distances.numpy())
+    
+    label_cnt = list(glob.glob(f"{save_dir}/label_*"))
+    cnt = len(label_cnt)
+    with open(f"{save_dir}/label_{cnt}.npy", 'wb') as f:
+        np.save(f, labels.numpy())
+
 
     # Get the indices of the sorted distances
     sorted_indices = torch.argsort(distances, dim=1)

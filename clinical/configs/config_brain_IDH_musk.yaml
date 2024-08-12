@@ -1,0 +1,57 @@
+General:
+    epochs: &epochs 50
+    seed: 123456
+    acc_steps: 1
+
+
+Data:
+    dataset_name: 'multimodal'
+
+    train_df: ./workspace/splits/IDH_42.csv
+    val_df: null
+    test_df: null
+
+    feat_dir: ./workspace/data/IDH/idh_image
+    report_dir: ./workspace/data/IDH/idh_report
+
+    label_key: "label"
+    image_key: "slide_id" 
+
+    wsi_batch: false  # if false, then batch_size must be 1.
+    batch_size: 1
+    num_workers: 8
+
+
+Model:
+    name: "models.MMClassifier"
+    params:
+        image_mil_name: "models.CLAM_Batch"
+
+        mil_params:
+            hidden_feat: 128
+            gate: true
+            size_arg: 'small'
+            dropout: true
+            instance_eval: false
+            subtyping: false
+            k_sample: 16
+        feat_dim: 1024
+        num_classes: 2
+
+Optimizer:
+    optimizer:
+        name: Adam
+        params:
+            lr: 0.01
+            amsgrad: False
+    lr_scheduler:
+        name: CosineAnnealingLR
+        params:
+            T_max: *epochs
+            last_epoch: -1
+
+
+Loss:
+    name: "torch.nn.CrossEntropyLoss"
+    params:
+        label_smoothing: 0.0

@@ -104,6 +104,7 @@ class CLAM_SB(nn.Module):
                  instance_eval=True
                  ):
         super(CLAM_SB, self).__init__()
+        # self.size_dict = {"small": [feat_dim, 512, 256], "big": [feat_dim, 512, 384]}
         self.size_dict = {"small": [feat_dim, hidden_feat, 256], "big": [feat_dim, hidden_feat, 384]}
         size = self.size_dict[size_arg]
         fc = [nn.Linear(size[0], size[1]), nn.ReLU()]
@@ -351,6 +352,7 @@ class CLAM_Batch(nn.Module):
                  instance_eval=False
                  ):
         super(CLAM_Batch, self).__init__()
+        # self.size_dict = {"small": [feat_dim, 512, 256], "big": [feat_dim, 512, 384]}
         self.size_dict = {"small": [feat_dim, hidden_feat, 256], "big": [feat_dim, hidden_feat, 384]}
         size = self.size_dict[size_arg]
         fc = [nn.Linear(size[0], size[1]), nn.ReLU()]

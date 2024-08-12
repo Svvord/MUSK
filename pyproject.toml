@@ -35,7 +35,14 @@ dependencies = [
 "torchmetrics==0.7.3",
 "transformers==4.38.1",
 "deepspeed==0.4.0",
-"pytorch-lightning==2.2.1"
+"pytorch-lightning==2.2.1",
+"nltk",
+"rouge",
+"scikit-image",
+"accelerate",
+"fairscale",
+"ruamel.yaml",
+"wandb",
 ]
 
 [tool.setuptools.packages.find]

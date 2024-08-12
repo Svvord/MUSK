@@ -97,7 +97,7 @@ class CoxSurvLoss(nn.Module):
     def __init__(self, reduction='mean'):
         super(CoxSurvLoss, self).__init__()
 
-    def forward(self, hazards, time, c):
+    def forward(self, hazards, time, status):
         # This calculation credit to Travers Ching https://github.com/traversc/cox-nnet
         # Cox-nnet: An artificial neural network method for prognosis prediction of high-throughput omics data
         
@@ -117,9 +117,10 @@ class CoxSurvLoss(nn.Module):
                 
         theta = hazards.reshape(-1)
         exp_theta = torch.exp(theta)
-        loss_cox = -torch.mean((theta - torch.log(torch.sum(exp_theta*R_mat, dim=1))) * c)
-
+        loss_cox = -torch.mean((theta - torch.log(torch.sum(exp_theta*R_mat, dim=1))) * status)
+        
         return loss_cox
+
 
 def nll_loss(hazards, S, Y, c, alpha=0.4, eps=1e-7):
     batch_size = len(Y)

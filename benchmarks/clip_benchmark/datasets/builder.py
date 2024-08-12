@@ -12,10 +12,9 @@ from torchvision.datasets import (
 from . import voc2007, flickr, caltech101, imagenetv2, objectnet, babel_imagenet, sugar_crepe
 from torch.utils.data import default_collate
 from PIL import Image
-from .histopathology_datasets import SicapDataset, PCamDataset, NCTCRCDataset, \
-    SkinDataset, WSSS4LUADDataset, PannukeDataset, UnitopathoDataset, UnitopathoRetrievalDataset, \
-    LC25LungDataset, LC25ColonDataset, OsteoDataset, RenalCellDataset, LC25Dataset, \
-    PannukeRetrievalDataset, BRACS6ClsDataset, BRACS3ClsDataset, PubmedDataset, BookSetDataset
+from .histopathology_datasets import PCamDataset, \
+    SkinDataset, PannukeDataset, UnitopathoDataset, \
+        UnitopathoRetrievalDataset, BRACS6ClsDataset, BRACS3ClsDataset, PathMMUDataset
 
 
 def build_dataset(dataset_name, root="root", transform=None, split="test", download=True, annotation_file=None,
@@ -111,13 +110,6 @@ def build_dataset(dataset_name, root="root", transform=None, split="test", downl
         ds = CIFAR10(root=root, train=train, transform=transform, download=download, **kwargs)
 
     # >>>>>> histopathology dataset >>>>>> #
-    elif dataset_name == "sicap":
-        assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
-        ds = SicapDataset(root=root,
-                          image_dir="images",
-                          transform=transform,
-                          train=train)
-
     elif dataset_name == "skin":
         assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
         ds = SkinDataset(root,
@@ -141,22 +133,11 @@ def build_dataset(dataset_name, root="root", transform=None, split="test", downl
         ds = PCamDataset(root=root,
                          transform=transform,
                          train=train)
-    
-    elif dataset_name == "nct_crc":
-        
-        assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
-        ds = NCTCRCDataset(root=root, transform=transform, train=train)
 
-    elif dataset_name == "wsss4luad":
-        assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
-        ds = WSSS4LUADDataset(root=root, transform=transform, train=train)
 
     elif dataset_name == "pannuke":
         assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
         ds = PannukeDataset(root=root, transform=transform, train=train)
-
-    elif dataset_name == "pannuke_retrieval":
-        ds = PannukeRetrievalDataset(root=root, transform=transform)
 
     elif dataset_name == "unitopatho":
         assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
@@ -165,26 +146,6 @@ def build_dataset(dataset_name, root="root", transform=None, split="test", downl
     elif dataset_name == "unitopatho_retrieval":
         assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
         ds = UnitopathoRetrievalDataset(root=root, transform=transform, train=train)
-
-    elif dataset_name == "lc25_colon":
-        assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
-        ds = LC25ColonDataset(root=root, transform=transform, train=train)
-
-    elif dataset_name == "lc25_lung":
-        assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
-        ds = LC25LungDataset(root=root, transform=transform, train=train)
-
-    elif dataset_name == "lc25":
-        assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
-        ds = LC25Dataset(root=root, transform=transform, train=train)
-
-    elif dataset_name == "osteo":
-        assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
-        ds = OsteoDataset(root=root, transform=transform, train=train)
-
-    elif dataset_name == "renal_cell":
-        assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
-        ds = RenalCellDataset(root=root, transform=transform, train=train)
 
     elif dataset_name == "bracs6cls":
         assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
@@ -198,21 +159,12 @@ def build_dataset(dataset_name, root="root", transform=None, split="test", downl
         assert split in ("train", "test"), f"Only `train` and `test` split available for {dataset_name}"
         ds = BRACS6ClsDataset(root=root, transform=transform, train=train, is_retrieval=True)
     
-    # zeros-shot image-to retrieval
-    elif dataset_name == "pubmed_retrieval":
-        ds = PubmedDataset(
+    # zeros-shot image-text retrieval
+    elif dataset_name == "pathmmu_retrieval":
+        ds = PathMMUDataset(
             root=root, 
             transform=transform, 
         )
-
-    # zeros-shot image-to retrieval
-    elif dataset_name == "bookset_retrieval":
-        ds = BookSetDataset(
-            root=root, 
-            transform=transform, 
-        )
-
-
     # <<<<<< histopathology dataset <<<<<< #
 
     elif dataset_name == "cifar100":

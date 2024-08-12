@@ -56,8 +56,9 @@ def evaluate(model, dataloader, tokenizer,  device, amp=True, recall_k_list=[5])
 
         # compute the embedding of images and texts
         with torch.no_grad(), autocast():            
-            batch_images_emb = get_image_embeddings(model, batch_images)            
             batch_texts_emb = get_text_embeddings(model, tokenizer, batch_texts, device)
+            batch_images_emb = get_image_embeddings(model, batch_images)            
+            
 
         batch_images_emb_list.append(batch_images_emb.cpu())
         batch_texts_emb_list.append(batch_texts_emb.cpu())
@@ -73,8 +74,14 @@ def evaluate(model, dataloader, tokenizer,  device, amp=True, recall_k_list=[5])
     texts_emb = torch.cat(batch_texts_emb_list).float()
 
     # get the score for each text and image pair
-    scores = texts_emb @ images_emb.t()
+    scores  = texts_emb @ images_emb.t()
     
+    # TODO: save similarity matrix for further investigations
+    # save_dir = "/mnt/radonc-li01/private/xiangjx/code/musk_v2/5_eval_benchmarks/results/mm_retrieval/pathmmu"
+    # cnt = len(os.listdir(save_dir))
+    # with open(f"{save_dir}/sim_{cnt}.npy", 'wb') as f:
+    #     np.save(f, scores.numpy())
+
     # construct a the positive pair matrix, which tells whether each text-image pair is a positive or not
     positive_pairs = torch.zeros_like(scores, dtype=bool)
     positive_pairs[torch.arange(len(scores)), texts_image_index] = True
@@ -98,10 +105,11 @@ def evaluate(model, dataloader, tokenizer,  device, amp=True, recall_k_list=[5])
 def xlm_tokenizer(tokens, tokenizer, max_len=64):
     tokens = tokenizer.encode(tokens)
 
+    tokens = tokens[1:-1]  # remove eos and bos;
     if len(tokens) > max_len - 2:
         tokens = tokens[:max_len - 2]
+    tokens = [tokenizer.bos_token_id] + tokens[:] + [tokenizer.eos_token_id]  # ADD eos and bos;
 
-    tokens = [tokenizer.bos_token_id] + tokens[:] + [tokenizer.eos_token_id]
     num_tokens = len(tokens)
     padding_mask = [0] * num_tokens + [1] * (max_len - num_tokens)
 
@@ -111,13 +119,13 @@ def xlm_tokenizer(tokens, tokenizer, max_len=64):
 
 def get_text_embeddings(model, tokenizer, texts, device):
     
-    # BEIT3 tokenizer for encoding class names
+    # MUSK tokenizer for encoding class names
     if tokenizer.__class__.__name__ == "XLMRobertaTokenizer":
 
         text_ids = []
         paddings = []
         for txt in texts:
-            txt_ids, pad = xlm_tokenizer(txt, tokenizer, max_len=64)
+            txt_ids, pad = xlm_tokenizer(txt, tokenizer, max_len=100)
             text_ids.append(torch.tensor(txt_ids).unsqueeze(0))
             paddings.append(torch.tensor(pad).unsqueeze(0))
 
@@ -126,7 +134,6 @@ def get_text_embeddings(model, tokenizer, texts, device):
         class_embedding = model(
             text_description=text_ids.to(device),
             padding_mask=paddings.to(device),
-            return_global=True, 
             out_norm=True,
             with_head=True  # MUST use pretrained head for retrieval!!!!!!
         )[1]
@@ -144,6 +151,12 @@ def get_text_embeddings(model, tokenizer, texts, device):
                                                 inputs['attention_mask'].to(device))
 
         # class_embedding = F.normalize(class_embeddings, dim=-1)
+    
+    # tokenizer for CONCH
+    elif tokenizer.__class__.__name__ == "PreTrainedTokenizerFast":
+        from conch.open_clip_custom import tokenize
+        tokenized_prompts = tokenize(texts=texts, tokenizer=tokenizer).to(device)
+        class_embedding = model.encode_text(tokenized_prompts)
 
     else:
         texts = tokenizer(texts).to(device)  # tokenize
@@ -162,14 +175,22 @@ def get_image_embeddings(model, batch_images):
             image=batch_images,
             text_description=None,
             padding_mask=None,
-            return_global=True, 
             out_norm=True,
             with_head=True # MUST use pretrained head for retrieval!!!!!!
         )[0]
 
+    # CTransPath
+    elif 'swin' in model_name.lower():
+        image_features = model(batch_images)
+        image_features = F.normalize(image_features, dim=-1)
+
     elif 'clipmodel' in model_name.lower():
         image_features = model.get_image_features(batch_images)
         image_features = F.normalize(image_features, dim=-1)
+
+    # image embeddings for CONCH
+    elif 'CoCa' in model_name:
+        image_features = model.encode_image(batch_images, proj_contrast=True, normalize=True)
 
     else:
         # note: not sure if we want to train on l2-normalized features
@@ -178,59 +199,10 @@ def get_image_embeddings(model, batch_images):
 
     return image_features
 
-
-def tokenizer_text_batch(tokenizer, batch_texts, max_len=64):
-
-    # for MUSK model
-    if self.tokenizer.__class__.__name__ == "XLMRobertaTokenizer":
-        if isinstance(text_segment, str):
-            tokens = self.tokenizer.tokenize(text_segment)
-        else:
-            tokens = text_segment[:]
-        if len(tokens) == 0:
-            raise RuntimeError("The text segment should contains at least one tokens!")
-
-        if len(tokens) > max_len - 2:
-            tokens = tokens[:max_len - 2]
-        tokens = [self.bos_token_id] + tokens[:] + [self.eos_token_id]  # add eos and bos; 2 eos of bertpath, this is a bug
-        num_tokens = len(tokens)
-        padding_mask = [0] * num_tokens + [1] * (max_len - num_tokens)
-        text_tokens = tokens + [self.pad_token_id] * (max_len - num_tokens)
-    
-    # for BiomecalCLIP
-    elif self.tokenizer.__class__.__name__ == "CLIPTokenizerFast":
-        if not isinstance(text_segment, str):  # since the text_segment is stored in ids, with beit3 tokenizer
-            text_segment = BEIT3_Token.decode(text_segment)
-        inputs = self.tokenizer(text_segment, padding=True, return_tensors="pt")
-        tokens = list(inputs['input_ids'].squeeze().numpy())
-
-        tokens = tokens[1:-1]  # remove eos and bos;
-
-        if len(tokens) > max_len - 2:
-            tokens = tokens[:max_len - 2]
-
-        tokens = [self.bos_token_id] + tokens[:] + [self.eos_token_id]  # add eos and bos
-        num_tokens = len(tokens)
-        padding_mask = [1] * num_tokens + [0] * (max_len - num_tokens)  # this line is different
-        text_tokens = tokens + [self.pad_token_id] * (max_len - num_tokens)
-    
-    # for open_clip, quilt1m
-    elif self.tokenizer.__class__.__name__ == "SimpleTokenizer":  
-        if not isinstance(text_segment, str):  # since the text_segment is stored in ids, with beit3 tokenizer
-            text_segment = BEIT3_Token.decode(text_segment)
-
-        text_tokens = self.tokenizer(text_segment)[0]  # tokenize, padding with 0
-        num_tokens = 77
-        padding_mask = torch.zeros_like(text_tokens)
-
-    else:
-        raise NotImplementedError
-
-    return text_tokens, padding_mask
-
 def dataloader_with_indices(dataloader):
     start = 0
     for x, y in dataloader:
+        
         end = start + len(x)
         inds = torch.arange(start, end)
         yield x, y, inds

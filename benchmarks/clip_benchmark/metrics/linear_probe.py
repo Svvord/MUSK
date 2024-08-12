@@ -50,14 +50,20 @@ class Featurizer(torch.nn.Module):
                 image=input,
                 text_description=None,
                 padding_mask=None,
-                return_global=True, 
-                with_head=False, 
                 out_norm=True
             )[0]
 
         elif 'clipmodel' in model_name.lower():
             image_features = self.model.get_image_features(input)
             image_features = F.normalize(image_features, dim=-1)
+
+        elif 'coca' in model_name.lower():  # use for conch
+            
+            image_features = self.model.encode_image(
+                input, 
+                proj_contrast=False, 
+                normalize=False
+                )
 
         else:
             # note: not sure if we want to train on l2-normalized features

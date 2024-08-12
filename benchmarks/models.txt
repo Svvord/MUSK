@@ -1,1 +1,2 @@
-musk_large_patch16_384,../musk/models/musk.pth
+musk_large_patch16_384,/mnt/radonc-li01/private/xiangjx/code/musk_v2/MUSK/musk/models/musk.pth
+conch,/mnt/radonc-li01/private/xiangjx/models/conch/conch.pt

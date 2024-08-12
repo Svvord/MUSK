@@ -10,8 +10,7 @@ import os
 from itertools import product
 from clip_benchmark.datasets.builder import build_dataset, get_dataset_collate_fn, get_dataset_default_task, \
     dataset_collection, get_dataset_collection_from_file
-from clip_benchmark.metrics import image_caption_selection, zeroshot_classification, zeroshot_retrieval, linear_probe, \
-    captioning, image_retrieval, linear_probe_text
+from clip_benchmark.metrics import zeroshot_classification, zeroshot_retrieval, linear_probe, image_retrieval
 from clip_benchmark.model_collection import get_model_collection_from_file, model_collection
 from clip_benchmark.models import load_clip, MODEL_TYPES
 import torch.nn as nn
@@ -38,7 +37,7 @@ def get_parser_args():
                              choices=["zeroshot_classification", "zeroshot_retrieval",
                                       "linear_probe", "captioning",
                                       "image_caption_selection", "auto",
-                                      "image_retrieval", "linear_probe_text"],
+                                      "image_retrieval", "pathvqa"],
                              help="Task to evaluate on. With --task=auto, the task is automatically inferred from the dataset.")
     parser_eval.add_argument('--no_amp', action="store_false", dest="amp", default=True,
                              help="whether to use mixed precision")
@@ -227,39 +226,24 @@ def run(args, transforms=None):
     if args.verbose:
         print(f"Running '{task}' on '{dataset_name}' with the model '{args.pretrained}' on language '{args.language}'")
     
-    data_root = "./data"
-
-    if args.dataset_root == "":
-        dataset_path = {"sicap": f"{data_root}/sicapv2/SICAPv2",
-                        "skin": f"{data_root}/skincancer",
-                        "pcam": f"{data_root}/pcamv1",
-                        "nct_crc": f"{data_root}/nct-crc",
-                        "wsss4luad": f"{data_root}/WSSS4LUAD",
-                        "pannuke": f"{data_root}/pannuke/processed_threshold=10_0.3",
-                        "unitopatho": f"{data_root}/unitopatho/unitopath-public",
-                        "unitopatho_retrieval": f"{data_root}/unitopatho/unitopath-public",  # image retrieval
-
-                        "lc25_colon": f"{data_root}/lc25000/colon_image_sets",
-                        "lc25": f"{data_root}/lc25000",
-                        "lc25_lung": f"{data_root}/lc25000/lung_image_sets",
-
-                        "osteo": f"{data_root}/osteo",
-                        "renal_cell": f"{data_root}/renal_cell/tissue_classfication",
-                        "bracs6cls": f"{data_root}/brcas/BRACS_RoI/latest_version",
-                        "bracs3cls": f"{data_root}/brcas/BRACS_RoI/latest_version",
-                        "bracs_retrieval": f"{data_root}/brcas/BRACS_RoI/latest_version",   # image retrieval
-                            
-                        "pubmed_retrieval": f"{data_root}/arch/pubmed_set",  # cross-modal retrieval
-                        "bookset_retrieval": f"{data_root}/arch/books_set"   # cross-modal retrieval
-                        }
-        dataset_root = dataset_path[dataset_name]
-    else:
-        dataset_root = args.dataset_root.format(dataset=dataset_name, dataset_cleaned=dataset_name.replace("/", "-"))
-
+    data_root = args.dataset_root
+    dataset_path = {
+                    "skin": f"{data_root}/skincancer",
+                    "pcam": f"{data_root}/pcamv1",
+                    "pannuke": f"{data_root}/pannuke/processed_threshold=10_0.3",
+                    "unitopatho": f"{data_root}/unitopatho/unitopath-public",
+                    "unitopatho_retrieval": f"{data_root}/unitopatho/unitopath-public",  # image2image retrieval
+                    "bracs_retrieval": f"{data_root}/brcas/BRACS_RoI/latest_version",   # image2image retrieval
+                    "pathmmu_retrieval": f"{data_root}/PathMMU",   # cross-modal retrieval
+                    }
+    dataset_root = dataset_path[dataset_name]
+   
     if 'musk' in args.model.lower():
         model_type = 'musk'
+    elif 'conch' in args.model.lower():
+        model_type = 'conch'
     else:
-        model_type = 'clip'
+        raise NotImplementedError
 
     #  >>>> load models >>>> #
     if args.skip_load:
@@ -279,24 +263,25 @@ def run(args, transforms=None):
                 device=args.device
             )
             model.eval()
+
         elif model_type == 'musk':
             from transformers import XLMRobertaTokenizer
-            tokenizer = XLMRobertaTokenizer("../musk/models/tokenizer.spm")
-
             from timm.data.constants import IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
+            from timm.models import create_model
 
-            img_size = 384 
+            import clip_benchmark.models.musk_modeling
+            import clip_benchmark.models.musk_utils as mutils
+            
+            tokenizer_path = args.pretrained.replace("musk.pth", "tokenizer.spm")
+            tokenizer = XLMRobertaTokenizer(tokenizer_path)
+            img_size = 384 if '384' in args.model else 224
+
             transform = torchvision.transforms.Compose([
                 torchvision.transforms.Resize(img_size, interpolation=3, antialias=True),
                 torchvision.transforms.CenterCrop((img_size, img_size)),
                 torchvision.transforms.ToTensor(),
                 torchvision.transforms.Normalize(mean=IMAGENET_INCEPTION_MEAN, std=IMAGENET_INCEPTION_STD)
             ])
-
-            # load model
-            from timm.models import create_model
-            sys.path.append("../musk")
-            import modeling
 
             model = create_model(
                 args.model,
@@ -307,8 +292,16 @@ def run(args, transforms=None):
             )
 
             # load model weight
-            import clip_benchmark.datasets.beit3_utils as beit3_utils
-            beit3_utils.load_model_and_may_interpolate(args.pretrained, model, 'model|module', '')
+            mutils.load_model_and_may_interpolate(args.pretrained, model, 'model|module', '')
+            model.eval()
+
+        elif model_type == 'conch':
+            from conch.open_clip_custom import create_model_from_pretrained, get_tokenizer
+            tokenizer = get_tokenizer()
+            model, transform = create_model_from_pretrained(
+                "conch_ViT-B-16", 
+                checkpoint_path=args.pretrained
+                )
             model.eval()
 
         else:
@@ -391,14 +384,6 @@ def run(args, transforms=None):
             amp=args.amp
         )
 
-    elif task == "image_caption_selection":
-        metrics = image_caption_selection.evaluate(
-            model,
-            dataloader,
-            tokenizer,
-            device=args.device,
-            amp=args.amp,
-        )
     elif task == "linear_probe":
         # we also need the train split for linear probing.
         train_dataset = build_dataset(
@@ -432,58 +417,9 @@ def run(args, transforms=None):
             verbose=args.verbose,
         )
 
-    elif task == "linear_probe_text":
-        """
-        this training is specially designed for BERTPath; other models use linear_probe branch.
-        """
-        # we also need the train split for linear probing.
-        train_dataset = build_dataset(
-            dataset_name=args.dataset,
-            root=dataset_root,
-            transform=transform,
-            split='train',
-            annotation_file=args.annotation_file,
-            download=True,
-        )
-        train_dataloader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=args.batch_size,
-            shuffle=False, num_workers=args.num_workers,
-            collate_fn=collate_fn, pin_memory=True,
-        )
-
-        metrics = linear_probe_text.evaluate(
-            model,
-            train_dataloader,
-            dataloader,
-            tokenizer,
-            args.fewshot_k,
-            args.batch_size,
-            args.num_workers,
-            args.fewshot_lr,
-            args.fewshot_epochs,
-            (args.model + '-' + args.pretrained + '-' + args.dataset).replace('/', '_'),
-            args.seed,
-            args.feature_root,
-            device=args.device,
-            amp=args.amp,
-            verbose=args.verbose,
-        )
-
-    elif task == "captioning":
-        metrics = captioning.evaluate(
-            model=model,
-            dataloader=dataloader,
-            batch_size=args.batch_size,
-            num_workers=args.num_workers,
-            device=args.device,
-            amp=args.amp,
-            verbose=args.verbose,
-            transform=transform
-        )
     else:
-        raise ValueError(
-            "Unsupported task: {}. task should be `zeroshot_classification`, "
-            "`zeroshot_retrieval`, `linear_probe`,  or `captioning`".format(task))
+        raise ValueError("Unsupported task: {}".format(task))
+
     dump = {
         "dataset": args.dataset,
         "model": args.model,
@@ -492,6 +428,7 @@ def run(args, transforms=None):
         "metrics": metrics,
         "language": args.language,
     }
+    
     if args.verbose:
         print(f"Dump results to: {output}")
     with open(output, "a+") as f:

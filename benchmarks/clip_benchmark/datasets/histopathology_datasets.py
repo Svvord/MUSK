@@ -11,6 +11,8 @@ import h5py
 import numpy
 import json
 import pandas as pd
+from pathlib import Path
+import io
 
 
 class PCamDataset(torch.utils.data.Dataset):
@@ -47,233 +49,6 @@ class PCamDataset(torch.utils.data.Dataset):
         return image, label
 
 
-class NCTCRCDataset(torch.utils.data.Dataset):
-    def __init__(self, root, transform=None, train=True):
-        self.trans = transform
-        self.cancer_list = ["STR", "TUM"]
-        self.normal_list = ["ADI", "BACK", "DEB", "LYM", "MUC", "MUS", "NORM"]
-        if train:
-            self.data = list(glob.glob(f"{root}/NCT-CRC-HE-100K/*/*.tif"))
-        else:
-            self.data = list(glob.glob(f"{root}/CRC-VAL-HE-7K/*/*.tif"))
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-        # self.classes = ['Adipose', 'Debris', 'Lymphocytes', 'Mucus', 'Smooth muscle',
-        #                 'Normal colon mucosa',
-        #                 'Cancer-associated stroma',
-        #                 'Colorectal adenocarcinoma epithelium']
-        self.classes = [
-            "Adipose", "background", "debris", "lymphocytes", "mucus", "smooth muscle",
-            "normal colon mucosa", "cancer - associated stroma", "colorectal adenocarcinoma epithelium"]
-
-        class2label_binary = {"ADI": 0, "BACK": 0, "DEB": 0, "LYM": 0, "MUC": 0, "MUS": 0, "NORM": 0, "STR": 1,
-                              "TUM": 1}
-        class2label_multiclass = {"ADI": 0, "BACK": 1, "DEB": 2, "LYM": 3, "MUC": 4, "MUS": 5, "NORM": 6, "STR": 7,
-                                  "TUM": 8}
-
-        self.class2label = class2label_multiclass
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, item):
-        image = Image.open(self.data[item]).convert("RGB")
-
-        if self.trans is not None:
-            if self.trans.__class__.__name__ == "CLIPProcessor":
-                image = self.trans(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.trans(image)
-
-        image_path = self.data[item]
-        label_name = image_path.split("/")[-2]
-        label = self.class2label[label_name]
-
-        # label = 0
-        #
-        # for element in self.cancer_list:
-        #     if element in self.data[item]:
-        #         label = 1
-
-        return image, label
-
-
-class MhistDataset(torch.utils.data.Dataset):
-    def __init__(self, root, csv_file, image_dir, transform=None, train=True):
-        csv_file = os.path.join(root, csv_file)
-        image_dir = os.path.join(root, image_dir)
-
-        self.data = pd.read_csv(csv_file)
-        if train:
-            self.data = self.data[self.data['Partition'] == 'train']
-        else:
-            self.data = self.data[self.data['Partition'] != 'train']
-        self.image_paths = self.data['Image Name'].values
-        self.labels = self.data['Majority Vote Label'].values
-        self.image_dir = image_dir
-        self.transform = transform
-        self.train = train
-        self.cat_to_num_map = {'HP': 0, 'SSA': 1}
-        self.classes = ["hyperplastic polyp", "sessile serrated adenoma"]
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        image_path = os.path.join(self.image_dir, self.image_paths[index])
-        image = Image.open(image_path).convert('RGB')
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.transform(image)
-
-        label = self.cat_to_num_map[self.labels[index]]
-
-        return image, label
-
-
-class SicapDataset(torch.utils.data.Dataset):
-    def __init__(self, root, image_dir, transform=None, train=True):
-
-        image_dir = os.path.join(root, image_dir)
-
-        if train:
-            csv_file = os.path.join(root, "partition/Test", "Train.xlsx")
-            self.data = pd.read_excel(csv_file)
-        else:
-            csv_file = os.path.join(root, "partition/Test", "Test.xlsx")
-            self.data = pd.read_excel(csv_file)
-
-        # drop all columns except image_name and the label columns
-        label_columns = ['NC', 'G3', 'G4', 'G5']  # , 'G4C']
-        self.data = self.data[['image_name'] + label_columns]
-
-        # get the index of the maximum label value for each row
-        self.data['labels'] = self.data[label_columns].idxmax(axis=1)
-
-        # replace the label column values with categorical values
-        self.cat_to_num_map = label_map = {'NC': 0, 'G3': 1, 'G4': 2, 'G5': 3}  # , 'G4C': 4}
-        self.data['labels'] = self.data['labels'].map(label_map)
-
-        self.image_paths = self.data['image_name'].values
-        self.labels = self.data['labels'].values
-        self.image_dir = image_dir
-        self.transform = transform
-        self.train = train
-
-        # these prompts work better!
-        self.classes = ["non-cancerous well-differentiated glands",
-                        "gleason grade 3 with atrophic well differentiated and dense glandular regions",
-                        "gleason grade 4 with cribriform, ill-formed, large-fused and papillary glandular patterns",
-                        "gleason grade 5 with nests of cells without lumen formation, isolated cells and pseudo-roseting patterns",
-                        ]
-
-        # self.classes = ['Benign glands',
-        #                 'Atrophic dense glands',
-        #                 'Cribriform ill-formed fused papillary patterns',
-        #                 'Isolated nest cellswithout lumen rosetting patterns']
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        image_path = os.path.join(self.image_dir, self.image_paths[index])
-        image = Image.open(image_path).convert('RGB')
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.transform(image)
-
-        label = self.labels[index]
-
-        return image, label
-
-
-class ArchCsvDataset(torch.utils.data.Dataset):
-    def __init__(self, csv_file, transforms, img_key='image_path', caption_key='caption', sep=","):
-        df = pd.read_csv(csv_file, sep=sep)
-        self.images = df[img_key].tolist()
-        self.captions = df[caption_key].tolist()
-        self.transforms = transforms
-        self.ids = list(sorted(df['ids'].tolist()))
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.captions)
-
-    def __getitem__(self, idx):
-        id_ = self.ids[idx]
-        image = Image.open(str(self.images[id_])).convert("RGB")
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                images = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                images = self.transform(image)
-
-        texts = [str(self.captions[id_])]
-        return images, texts
-
-
-class OsteoDataset(torch.utils.data.Dataset):
-    def __init__(self, root, transform=None, train=True):
-        self.root = root
-
-        if train:
-            self.data = json.load(open(os.path.join(root, "train.json")))
-        else:
-            self.data = json.load(open(os.path.join(root, "test.json")))
-
-        self.csv_file = pd.read_csv(os.path.join(root, "labels.csv"), index_col=False, header=None)
-
-        self.transform = transform
-        self.cat_to_num_map = {'Non-Tumor': 0, 'Non-Viable-Tumor': 1, 'Viable': 2}
-        self.classes = ["non-tumor", "non-viable necrotic osteosarcoma tumor", "viable osteosarcoma tumor"]
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        image_path = os.path.join(self.root, self.data[index])
-        image = Image.open(image_path).convert('RGB')
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.transform(image)
-
-        class_name = self.csv_file[self.csv_file[2] == image_path.split("/")[-1]][1]
-        label = self.cat_to_num_map[class_name.iloc[0]]
-
-        return image, label
 
 
 class SkinDataset(torch.utils.data.Dataset):
@@ -353,47 +128,6 @@ class SkinDataset(torch.utils.data.Dataset):
         return image, label
 
 
-class WSSS4LUADDataset(torch.utils.data.Dataset):
-    def __init__(self, root, transform=None, train=True):
-        json_file = json.load(open(os.path.join(root, "data_split.json")))
-
-        self.data = []
-        split = 'train' if train else 'test'
-        for item in json_file:
-            if item['split'] == split:
-                self.data.append(item)
-
-        self.image_dir = root
-        self.transform = transform
-        self.train = train
-
-        # these prompts work better!
-        self.classes = ["benign",
-                        "cancer"]
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        image_path = os.path.join(self.image_dir, self.data[index]['path'])
-        image = Image.open(image_path).convert('RGB')
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.transform(image)
-
-        label = self.data[index]['label']
-
-        return image, label
-
-
 class PannukeDataset(torch.utils.data.Dataset):
     def __init__(self, root, transform=None, train=True):
         self.root = root
@@ -427,41 +161,6 @@ class PannukeDataset(torch.utils.data.Dataset):
         label = 1 if 'malignant' in self.df.iloc[index]['caption'] else 0
         return image, label
 
-
-class PannukeRetrievalDataset(torch.utils.data.Dataset):
-    """
-    for image retrieval
-    """
-
-    def __init__(self, root, transform=None):
-        self.df = pd.read_csv(os.path.join(root, "PanNuke_all_binary.csv"))
-        self.transform = transform
-
-        self.classes = ['bile-duct', 'liver', 'breast', 'pancreatic', 'adrenal gland', 'cervix', 'skin', 'kidney',
-                        'lung', 'thyroid', 'esophagus', 'uterus', 'bladder', 'prostate', 'testis',
-                        'ovarian', 'stomach', 'headneck', 'colon']
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.df)
-
-    def __getitem__(self, index):
-        fpath = self.df.iloc[index]['image']
-        image = Image.open(fpath).convert("RGB")
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.transform(image)
-
-        label_name = fpath.split("/")[-1].split("_")[0]
-        label = self.classes.index(label_name)
-        return image, label
 
 
 class UnitopathoDataset(torch.utils.data.Dataset):
@@ -576,192 +275,6 @@ class UnitopathoRetrievalDataset(torch.utils.data.Dataset):
 
         return image, label
 
-
-class LC25ColonDataset(torch.utils.data.Dataset):
-    """
-    Dataset for LC25000 colon image zero-shot retrieval
-    """
-
-    def __init__(self, root, transform=None, train=True):
-        if train:
-            self.data = json.load(open(os.path.join(root, "train.json"), "r"))
-        else:
-            self.data = json.load(open(os.path.join(root, "test.json"), "r"))
-
-        self.root = root
-        self.transform = transform
-
-        self.labels_dict = {"colon_aca": 0,
-                            "colon_n": 1}
-
-        self.classes = ["colon_aca",
-                        "colon_n"]
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        fpath = os.path.join(self.root, self.data[index])
-        image = Image.open(fpath).convert("RGB")
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.transform(image)
-
-        label = self.labels_dict[fpath.split("/")[-2]]
-
-        return image, label
-
-
-class LC25LungDataset(torch.utils.data.Dataset):
-    """
-    Dataset for LC25000 lunge image zero-shot retrieval
-    """
-
-    def __init__(self, root, transform=None, train=True):
-        if train:
-            self.data = json.load(open(os.path.join(root, "train.json"), "r"))
-        else:
-            self.data = json.load(open(os.path.join(root, "test.json"), "r"))
-
-        self.root = root
-        self.transform = transform
-
-        self.labels_dict = {"lung_aca": 0,
-                            "lung_n": 1,
-                            "lung_scc": 2}
-
-        self.classes = ["lung_aca",
-                        "lung_n",
-                        "lung_scc"]
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        fpath = os.path.join(self.root, self.data[index])
-        image = Image.open(fpath).convert("RGB")
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.transform(image)
-
-        label = self.labels_dict[fpath.split("/")[-2]]
-
-        return image, label
-
-
-class LC25Dataset(torch.utils.data.Dataset):
-    """
-    Dataset for LC25000 image linear probe
-    """
-
-    def __init__(self, root, transform=None, train=True):
-        if train:
-            self.data = json.load(open(os.path.join(root, "train.json"), "r"))
-        else:
-            self.data = json.load(open(os.path.join(root, "test.json"), "r"))
-
-        self.root = root
-        self.transform = transform
-
-        self.labels_dict = {"colon_aca": 0,
-                            "colon_n": 1,
-                            "lung_aca": 2,
-                            "lung_n": 3,
-                            "lung_scc": 4}
-        # colon adenocarcinoma, benign colonic tissue, lung adenocarcinoma,
-        # lung squamous cell carcinoma, and benign lung tissue.
-
-        self.classes = ["colon adenocarcinoma",
-                        "benign colonic tissue",
-                        "lung adenocarcinoma",
-                        "benign lung tissue",
-                        "lung squamous cell carcinoma"]
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        fpath = os.path.join(self.root, self.data[index])
-        image = Image.open(fpath).convert("RGB")
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.transform(image)
-
-        label = self.labels_dict[fpath.split("/")[-2]]
-
-        return image, label
-
-
-class RenalCellDataset(torch.utils.data.Dataset):
-
-    def __init__(self, root, transform=None, train=True):
-        if train:
-            self.data = json.load(open(os.path.join(root, "train.json"), "r"))
-        else:
-            self.data = json.load(open(os.path.join(root, "test.json"), "r"))
-
-        self.root = root
-        self.transform = transform
-
-        self.labels_dict = {"blood": 0,
-                            "cancer": 1,
-                            "empty": 2,
-                            "normal": 3,
-                            "other": 4,
-                            "stroma": 5}
-
-        self.classes = ["blood",
-                        "cancer",
-                        "empty",
-                        "normal",
-                        "other",
-                        "stroma"]
-
-        self.templates = ["a histopathology slide showing {c}",
-                          "histopathology image of {c}",
-                          "pathology tissue showing {c}",
-                          "presence of {c} tissue on image"]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        fpath = os.path.join(self.root, self.data[index])
-        image = Image.open(fpath).convert("RGB")
-
-        if self.transform is not None:
-            if self.transform.__class__.__name__ == "CLIPProcessor":
-                image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-            else:
-                image = self.transform(image)
-
-        label = self.labels_dict[fpath.split("/")[-2]]
-
-        return image, label
 
 
 class BRACS6ClsDataset(torch.utils.data.Dataset):
@@ -878,59 +391,75 @@ class BRACS3ClsDataset(BRACS6ClsDataset):
                         "Cancerous "
                         ]
 
-from transformers import XLMRobertaTokenizer
-BEIT3_Token = XLMRobertaTokenizer(
-    "/mnt/sdd/vl_bertpath/3_contrastive_finetuning/beit3/beit3.spm"
-    )
 
-class PubmedDataset(torch.utils.data.Dataset):
+
+class PathMMUDataset(torch.utils.data.Dataset):
     def __init__(self, root, transform=None):
-
+        """
+        Initialize the dataset by processing the JSON files and setting up the image roots.
+        """
         self.transform = transform
-        self.root = root
+        self.root = Path(root)
+        self.items = []
 
-        items = []
-        index_file = os.path.join(root, "pubmed_set_retrieval.test.jsonl")
-        with open(index_file, mode="r", encoding="utf-8") as reader:
-            for line in reader:
-                data = json.loads(line)
-                items.append(data)
-            print("Load %d image-text pairs from %s. " % (len(items), index_file))
-        self.items = items
-    
+        # Process subsets
+        self.img_root = {
+            "Book": self.root / "Book/images",
+            "WebPathology": self.root / "WebPathology/images",
+            "Twitter": self.root / "Twitter/images",
+        }
+
+        self._process_json_files(self.root / "Book")
+        self._process_json_files(self.root / "WebPathology")
+        self._process_json_files(self.root / "Twitter")
+
+    def _process_json_files(self, dir_path):
+        """
+        Process all JSON files in the given directory and extend the items list.
+        """
+        dir_path = dir_path / "Caption"
+        json_files = dir_path.glob("*.json")
+        for json_file in json_files:
+            with open(json_file, 'r') as f:
+                try:
+                    data = json.load(f)
+                    
+                    data_list = list(data.values())
+                    dataset_name = json_file.parts[-3]
+                    for entry in data_list:
+                        entry['dataset'] = dataset_name
+
+                    self.items.extend(data_list)
+
+                except json.JSONDecodeError:
+                    print(f"Error reading JSON file: {json_file}")
+
     def __len__(self):
+        """
+        Return the total number of items in the dataset.
+        """
         return len(self.items)
 
-    def _get_image(self, image_path):
-        image = Image.open(image_path).convert("RGB")
+    def __getitem__(self, idx):
+        """
+        Retrieve an item by index, including the image and its corresponding caption.
+        """
+        
+        item = self.items[idx]
+        img_root = self.img_root[item['dataset']]
+        img_path = img_root / item['img_path']
 
+        try:
+            image = Image.open(img_path).convert("RGB")
+        except FileNotFoundError:
+            print(f"Image file not found: {img_path}")
+            return None
+        
         # for clip model
         if self.transform.__class__.__name__ == "CLIPProcessor":
-            
             image = self.transform(images=image, return_tensors="pt")['pixel_values'].squeeze(0)
-        # for beit3 model
+        # for other models
         else:
             image = self.transform(image)
-
-        return image
-
-    def __getitem__(self, idx):
-        item = self.items[idx]
-        image = self._get_image(item['image_path'])
-        text = BEIT3_Token.decode(item['text_segment'])
-        return image, text
-
-
-class BookSetDataset(PubmedDataset):
-    def __init__(self, root, transform=None):
-        self.transform = transform
-        self.root = root
-
-        items = []
-        index_file = os.path.join(root, "books_set_retrieval.test.jsonl")
-        with open(index_file, mode="r", encoding="utf-8") as reader:
-            for line in reader:
-                data = json.loads(line)
-                items.append(data)
-            print("Load %d image-text pairs from %s. " % (len(items), index_file))
-        self.items = items
+        
+        return image, item['caption']

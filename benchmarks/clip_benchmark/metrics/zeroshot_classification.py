@@ -10,17 +10,18 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 import numpy as np
-
+import glob
 from sklearn.metrics import classification_report, balanced_accuracy_score
 
 
 def xlm_tokenizer(tokens, tokenizer, max_len=64):
     tokens = tokenizer.encode(tokens)
-
+    
+    tokens = tokens[1:-1]  # remove eos and bos;
     if len(tokens) > max_len - 2:
         tokens = tokens[:max_len - 2]
 
-    tokens = [tokenizer.bos_token_id] + tokens[:] + [tokenizer.eos_token_id]
+    tokens = [tokenizer.bos_token_id] + tokens[:] + [tokenizer.eos_token_id]  # add eos and bos
     num_tokens = len(tokens)
     padding_mask = [0] * num_tokens + [1] * (max_len - num_tokens)
 
@@ -57,6 +58,7 @@ def zero_shot_classifier(model, tokenizer, classnames, templates, device, amp=Tr
         zeroshot_weights = []
 
         for classname in tqdm(classnames):
+            
             if type(templates) == dict:
                 # class-specific prompts (e.g., CuPL https://arxiv.org/abs/2209.03320)
                 texts = templates[classname]
@@ -72,7 +74,7 @@ def zero_shot_classifier(model, tokenizer, classnames, templates, device, amp=Tr
                 text_ids = []
                 paddings = []
                 for txt in texts:
-                    txt_ids, pad = xlm_tokenizer(txt, tokenizer, max_len=64)
+                    txt_ids, pad = xlm_tokenizer(txt, tokenizer, max_len=100)
                     text_ids.append(torch.tensor(txt_ids).unsqueeze(0))
                     paddings.append(torch.tensor(pad).unsqueeze(0))
 
@@ -81,9 +83,8 @@ def zero_shot_classifier(model, tokenizer, classnames, templates, device, amp=Tr
                 class_embeddings = model(
                     text_description=text_ids.to(device),
                     padding_mask=paddings.to(device),
-                    return_global=True, 
                     with_head=True,
-                    out_norm=True,
+                    out_norm=True
                 )[1]
 
                 class_embedding = class_embeddings.mean(dim=0)
@@ -94,6 +95,14 @@ def zero_shot_classifier(model, tokenizer, classnames, templates, device, amp=Tr
                 text_features = model.get_text_features(inputs['input_ids'].to(device),
                                                         inputs['attention_mask'].to(device))
 
+                class_embedding = text_features.mean(dim=0)
+                class_embedding /= class_embedding.norm()
+            
+            # tokenizer for CONCH
+            elif tokenizer.__class__.__name__ == "PreTrainedTokenizerFast":
+                from conch.open_clip_custom import tokenize
+                tokenized_prompts = tokenize(texts=texts, tokenizer=tokenizer).to(device)
+                text_features = model.encode_text(tokenized_prompts)
                 class_embedding = text_features.mean(dim=0)
                 class_embedding /= class_embedding.norm()
 
@@ -161,21 +170,24 @@ def run_classification(model, classifier, dataloader, device, amp=True):
         for images, target in tqdm(dataloader):
             images = images.to(device)
             target = target.to(device)
-
+            
             with autocast():
                 model_name = model.__class__.__name__.lower()
 
-                # predict for MUSK model
+                # predict for musk model
                 if 'musk' in model_name:
                     image_features = model(
                         image=images, 
-                        return_global=True, 
-                        with_head=True, 
-                        out_norm=True # head must be used for zero-shot task
-                    )[0]
+                        out_norm=True,
+                        with_head=True  # head must be used for zero-shot task
+                        )[0]
 
                 elif 'clipmodel' in model_name:
                     image_features = model.get_image_features(images)
+                
+                # image embeddings for CONCH
+                elif 'CoCa' in model_name:
+                    image_features = model.encode_image(images, proj_contrast=True, normalize=True)
 
                 # predict for clip model
                 else:
@@ -281,6 +293,20 @@ def evaluate(model, dataloader, tokenizer, classnames, templates, device, amp=Tr
 
     logits, target = run_classification(model, classifier, dataloader, device, amp=amp)
     
+    # ------------------------ save prob and taregt for furter analysis ------------------------#
+    save_root = "/mnt/radonc-li01/private/xiangjx/code/musk_v2/5_eval_benchmarks/results/zs_cls"
+    logit_dir = list(glob.glob(f"{save_root}/logit_*"))
+    target_dir = list(glob.glob(f"{save_root}/target_*"))
+
+    cnt = len(logit_dir)
+    with open(f'{save_root}/logit_{cnt}.npy', 'wb') as f:
+        np.save(f, logits.numpy())
+
+    cnt = len(target_dir)
+    with open(f'{save_root}/target_{cnt}.npy', 'wb') as f:
+        np.save(f, target.numpy())
+    # ------------------------ save prob and taregt for furter analysis ------------------------#
+
     is_multilabel = (len(target.shape) == 2)
 
     if is_multilabel:
