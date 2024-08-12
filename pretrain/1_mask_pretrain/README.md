@@ -4,7 +4,7 @@ This code demonstrates how to train the MUSK model using unimodal image and text
 
 
 1. **Configure the Settings**
-    - Set the paths for the preprocessed image and text files by assigning them to `--image_dir` and `--text_dir` in the `./configs/pretrain_musk_large.yaml` file.
+    - Set the paths for the preprocessed image and text files by assigning them to `--image_dir` and `--text_dir` in the `./configs/pretrain_musk_large.yaml` file. We provide example data [here](https://drive.google.com/drive/folders/1gaBMTnF4zVxt1hUn9qaZVsbXJeDp_-TH?usp=sharing).
     - Download the required `--tokenizer` and specify its path.
     - Download the image tokenizer and set its path using `--tokenizer_weight`.
   

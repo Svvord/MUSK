@@ -52,7 +52,7 @@ pip install -e .
 
 Please refer to `./musk/demo.ipynb` for a demonstration. 
 
-Download the [model weight](https://github.com/lilab-stanford/MUSK/musk/assets/note.txt) and [tokenizer](https://drive.google.com/file/d/1NJGch0cIhYzSSqTCJCRaCgJqDIG12d8H/view?usp=sharing), and place them in the `./musk/models` directory.
+Download the [model weight](https://github.com/lilab-stanford/MUSK/tree/main/musk/assets/note.txt) and [tokenizer](https://drive.google.com/file/d/1NJGch0cIhYzSSqTCJCRaCgJqDIG12d8H/view?usp=sharing), and place them in the `./musk/models` directory.
 
 
 ```shell
@@ -101,7 +101,9 @@ Both `with_head` and `out_norm` should keep the same settings as those used in i
 
 ## Model Pretraining
 
-Masked pretraining instructions; Contrastive pretraining instructions.
+Masked pretraining [instructions](https://github.com/lilab-stanford/MUSK/tree/main/pretrain/1_mask_pretrain).
+
+Contrastive pretraining [instructions](https://github.com/lilab-stanford/MUSK/tree/main/pretrain/2_contrastive_pretrain).
 
 ## Evaluation on Cancer Diagnosis/Detection
 
@@ -127,7 +129,7 @@ The evaluated dataset includes:
 * BRACS (6 cls): [Download Link](https://www.bracs.icar.cnr.it/download/)
 </small>
 
-First, download the necessary datasets. For demonstrations, we provide the example datasets [here](https://github.com/lilab-stanford/MUSK/musk/assets/note.txt). Download and unzip it to a local path, for example `/root/user/data/downstreams_demo`, then, change the directory path `dataset_root=/root/user/data/downstreams_demo`. The code will automatically extract features and perform evaluations.
+First, download the necessary datasets. For demonstrations, we provide the example datasets [here](https://drive.google.com/drive/folders/15xlGg3HE4rVWz7ofg1rsgNwHGIFiO6Qa?usp=sharing). Download and unzip it to a local path, for example `/root/user/data/downstreams_demo`, then, change the directory path `dataset_root=/root/user/data/downstreams_demo`. The code will automatically extract features and perform evaluations.
 
 
 The main file is `clip_benchmark.cli` and includes the following options:
