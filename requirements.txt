@@ -1,5 +1,5 @@
-torch
-torchvision
+torch==2.0.1
+torchvision==0.15.2
 timm==0.4.12
 Pillow
 blobfile
@@ -16,7 +16,13 @@ sentencepiece
 pyarrow
 torchmetrics==0.7.3
 transformers
-deepspeed==0.4.0
+deepspeed==0.14.2
 torchscale==0.2.0
 pytorch-lightning==2.2.1
-
+nltk
+rouge
+scikit-image
+accelerate
+fairscale
+ruamel.yaml
+wandb

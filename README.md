@@ -52,7 +52,7 @@ pip install -e .
 
 Please refer to `./musk/demo.ipynb` for a demonstration. 
 
-Ensure you download the [model weight](https://github.com/lilab-stanford/MUSK) and [tokenizer](https://github.com/lilab-stanford/MUSK) beforehand, and place them in the `./musk/models` directory.
+Download the [model weight](https://github.com/lilab-stanford/MUSK/musk/assets/note.txt) and [tokenizer](https://drive.google.com/file/d/1NJGch0cIhYzSSqTCJCRaCgJqDIG12d8H/view?usp=sharing), and place them in the `./musk/models` directory.
 
 
 ```shell
@@ -87,7 +87,7 @@ The `with_head` parameter controls the projection head at the last layer. Set th
 ```python
 tokenizer = XLMRobertaTokenizer("./models/tokenizer.spm")
 text = 'histopathology image of lung adenocarcinoma'
-txt_ids, pad = xlm_tokenizer(txt, tokenizer, max_len=64)
+txt_ids, pad = xlm_tokenizer(txt, tokenizer, max_len=100)
 
 with torch.inference_mode():
    text_embeddings = model(
@@ -99,6 +99,10 @@ with torch.inference_mode():
 ```
 Both `with_head` and `out_norm` should keep the same settings as those used in image encoding.
 
+## Model Pretraining
+
+Masked pretraining instructions; Contrastive pretraining instructions.
+
 ## Evaluation on Cancer Diagnosis/Detection
 
 Please refer to `./benchmarks/demo.ipynb` for a demonstration. 
@@ -106,6 +110,7 @@ Please refer to `./benchmarks/demo.ipynb` for a demonstration.
 This section reproduces the results of cancer diagnosis/detection benchmarks, including image-text retrieval, image classification, image-image retrieval, and more. The evaluation code is all-in-one which adapted from the [CLIP Benchmark](https://github.com/LAION-AI/CLIP_benchmark).
 
 The evaluated dataset includes:
+<small>
 * BookSet: [Download Link](https://warwick.ac.uk/fac/cross_fac/tia/data/arch)
 * PubmedSet: [Download Link](https://warwick.ac.uk/fac/cross_fac/tia/data/arch)
 * PatchCamelyon: [Download Link](https://patchcamelyon.grand-challenge.org/)
@@ -120,13 +125,15 @@ The evaluated dataset includes:
 * WSSS4LUAD: [Download Link](https://github.com/sjin010/WSSS4LUAD)
 * BRACS (3 cls): [Download Link](https://www.bracs.icar.cnr.it/download/)
 * BRACS (6 cls): [Download Link](https://www.bracs.icar.cnr.it/download/)
+</small>
 
-First, download the necessary datasets. For code demonstration, we prepare the corss-modal retrieval dataset [here](https://github.com/lilab-stanford/MUSK). Download and unzip it, then, change the directory paths of the datasets in `./benchmarks/clip_benchmark/cli.py` (from `line 230` to `line 255`) so that the code can locate them. The code will automatically extract features and perform the necessary evaluation.
+First, download the necessary datasets. For demonstrations, we provide the example datasets [here](https://github.com/lilab-stanford/MUSK/musk/assets/note.txt). Download and unzip it to a local path, for example `/root/user/data/downstreams_demo`, then, change the directory path `dataset_root=/root/user/data/downstreams_demo`. The code will automatically extract features and perform evaluations.
 
 
 The main file is `clip_benchmark.cli` and includes the following options:
 - `--pretrained_model`: Specifies the model name and the path to its weights.
 - `--dataset`: Indicates the evaluation dataset(s); multiple datasets can be specified.
+- `--dataset_root`: The root of datasets.
 - `--task`: Defines the evaluation task.
 - `--batch_size`: Sets the batch size for feature extraction.
 - `--output`: Specifies where to save the output results.
@@ -143,7 +150,7 @@ Here are some example commands:
         --num_workers 16 \
         --seed 42 \
         --recall_k 1 10 50 \
-        --dataset_root "" \
+        --dataset_root "/root/user/data/downstreams_demo" \
         --output "./results/benchmark_mm_retrieval.json"
 ```
 
@@ -161,7 +168,7 @@ do
           --num_workers 16 \
           --fewshot_k $k_shot \
           --seed $seed \
-          --dataset_root "" \
+          --dataset_root "/root/user/data/downstreams_demo" \
           --output "./results/benchmark_fs_${k_shot}shot_seed${seed}.json"
   done
 done
@@ -175,7 +182,7 @@ python3 -m clip_benchmark.cli eval --pretrained_model models.txt \
         --batch_size 512 \
         --num_workers 16 \
         --seed 41 \
-        --dataset_root "" \
+        --dataset_root "/root/user/data/downstreams_demo" \
         --output "./results/image_retrieval/benchmark_image_retrieval.json"
 ```
 
@@ -184,7 +191,9 @@ and more tasks in `./benchmarks/demo.ipynb`.
 
 ## Evaluation on Outcome Prediction
 
-Please refer to `./clinical/demo.ipynb` for a demonstration.
+Please refer to `./clinical/demo.ipynb` for demonstrations. To reproduce the results, download the processed features for `IDH (subtyping)`[link](https://drive.google.com/file/d/1XfKB1qSjjujmQ4VwAGN5D9G6jt8bfyS6/view?usp=sharing) and `TCGA (prognosis)`[link](https://drive.google.com/file/d/1MLLT-iMMNACwR9TzcO4MfzDiF6nRiDn8/view?usp=sharing) into the `./clinical/workspace/data directory`, and then run `python3 train_mil.py`. To switch tasks, modify the `fname` in `train_mil.py` to other configurations in the `configs` directory.
+
+
 
 This section reproduces the outcome prediction results presented in the paper. All evaluated tasks utilize a consistent training and evaluation pipeline:
 
@@ -206,7 +215,3 @@ The project was built on top of many open-source repositories such as [Quilt1M](
 ## License
 
 This model and associated code are released under the CC-BY-NC-ND 4.0 license and may only be used for non-commercial, academic research purposes with proper attribution. Any commercial use, sale, or other monetization of the MUSK model and its derivatives, which include models trained on outputs from the MUSK model or datasets created from the MUSK model, is prohibited and requires prior approval.
-
-
-## Citation
-If you find our work useful in your research, please consider citing:
