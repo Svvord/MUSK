@@ -60,3 +60,6 @@ downloads
 *.pth
 *.spm
 *.zip
+*.pt
+*.json
+*.csv
