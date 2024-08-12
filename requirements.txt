@@ -17,7 +17,6 @@ pyarrow
 torchmetrics==0.7.3
 transformers
 deepspeed==0.14.2
-torchscale==0.2.0
 pytorch-lightning==2.2.1
 nltk
 rouge
