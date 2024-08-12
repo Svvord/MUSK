@@ -14,9 +14,9 @@ ftfy
 opencv-python
 sentencepiece
 pyarrow
+deepspeed==0.14.2
 torchmetrics==0.7.3
 transformers
-deepspeed==0.14.2
 pytorch-lightning==2.2.1
 nltk
 rouge
