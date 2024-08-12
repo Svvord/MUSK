@@ -43,6 +43,10 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+## Hardware Requirements
+
+The pretraining code has been tested on 64 NVIDIA V100 GPUs with 32 GB memory. The evaluation code has been tested on an NVIDIA GTX A6000 GPU with 48 GB memory.
+
 ## Basic Usage: MUSK as a Vision-Language Encoder
 
 Please refer to `./musk/demo.ipynb` for a demonstration. 
