@@ -52,7 +52,7 @@ pip install -e .
 
 Please refer to `./musk/demo.ipynb` for a demonstration. 
 
-Download the [model weight](https://github.com/lilab-stanford/MUSK/tree/main/musk/assets/note.txt) and [tokenizer](https://drive.google.com/file/d/1NJGch0cIhYzSSqTCJCRaCgJqDIG12d8H/view?usp=sharing), and place them in the `./musk/models` directory.
+Download the [model weight](https://github.com/lilab-stanford/MUSK/blob/main/musk/assets/note.txt) and [tokenizer](https://drive.google.com/file/d/1NJGch0cIhYzSSqTCJCRaCgJqDIG12d8H/view?usp=sharing), and place them in the `./musk/models` directory.
 
 
 ```shell
