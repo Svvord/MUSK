@@ -447,7 +447,7 @@ def vqkd_encoder_base_decoder_1x768x12_dino(pretrained=False, pretrained_weight=
 
 
 @register_model
-def vqkd_encoder_base_decoder_3x768x12_uni(pretrained=False, freeze_encoder=False, pretrained_weight=None, as_tokenzer=False, img_size=224, 
+def vqkd_encoder_base_decoder_3x768x12_ctrans(pretrained=False, freeze_encoder=False, pretrained_weight=None, as_tokenzer=False, img_size=224, 
                                             n_code=8192, code_dim=32, **kwargs):
     encoder_config, decoder_config = get_model_default_params(), get_model_default_params()
     

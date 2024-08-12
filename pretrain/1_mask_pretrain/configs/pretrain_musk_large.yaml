@@ -21,7 +21,7 @@ model:
 
 
 visual_tokenizer:
-  tokenizer_model: vqkd_encoder_base_decoder_3x768x12_uni
+  tokenizer_model: vqkd_encoder_base_decoder_3x768x12_ctrans
   second_input_size: 384
   tokenizer_weight: /path/to/image_tokenizer.pth
   codebook_size: 8192
