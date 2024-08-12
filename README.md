@@ -35,17 +35,12 @@ git clone https://github.com/lilab-stanford/MUSK
 cd MUSK
 ```
 
-Then install the dependencies:
-
-```shell
-pip install -r requirements.txt
-```
-Or, you may create a new enviroment with anaconda.
+Create a new enviroment with anaconda.
 ```shell
 conda create -n musk python=3.10 -y
 conda activate musk
 pip install --upgrade pip
-pip install -e .
+pip install -r requirements.txt
 ```
 
 ## Basic Usage: MUSK as a Vision-Language Encoder
