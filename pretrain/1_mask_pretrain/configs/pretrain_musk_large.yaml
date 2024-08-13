@@ -47,6 +47,6 @@ dataset:
   num_workers: 8
   batch_size: 32
   pin_mem: true
-  image_dir: /path/to/tcga.tsv
+  image_dir: /path/to/tcga_eval.tsv
   text_dir: /path/to/pubmed_text.tsv
 

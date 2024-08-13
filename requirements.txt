@@ -28,3 +28,7 @@ pandas
 future
 scikit-survival
 torchmetrics==0.7.3
+h5py
+open_clip_torch>=0.2.1
+pycocoevalcap
+webdataset>=0.2.31
