@@ -75,12 +75,6 @@ def evaluate(model, dataloader, tokenizer,  device, amp=True, recall_k_list=[5])
 
     # get the score for each text and image pair
     scores  = texts_emb @ images_emb.t()
-    
-    # TODO: save similarity matrix for further investigations
-    # save_dir = "/mnt/radonc-li01/private/xiangjx/code/musk_v2/5_eval_benchmarks/results/mm_retrieval/pathmmu"
-    # cnt = len(os.listdir(save_dir))
-    # with open(f"{save_dir}/sim_{cnt}.npy", 'wb') as f:
-    #     np.save(f, scores.numpy())
 
     # construct a the positive pair matrix, which tells whether each text-image pair is a positive or not
     positive_pairs = torch.zeros_like(scores, dtype=bool)

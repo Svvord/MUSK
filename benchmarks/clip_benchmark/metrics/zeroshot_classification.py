@@ -294,7 +294,9 @@ def evaluate(model, dataloader, tokenizer, classnames, templates, device, amp=Tr
     logits, target = run_classification(model, classifier, dataloader, device, amp=amp)
     
     # ------------------------ save prob and taregt for furter analysis ------------------------#
-    save_root = "/mnt/radonc-li01/private/xiangjx/code/musk_v2/5_eval_benchmarks/results/zs_cls"
+    save_root = "./results/zs_cls"
+    os.makedirs(save_root, exist_ok=True)
+
     logit_dir = list(glob.glob(f"{save_root}/logit_*"))
     target_dir = list(glob.glob(f"{save_root}/target_*"))
 
