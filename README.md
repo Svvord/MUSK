@@ -128,7 +128,7 @@ The evaluated dataset includes:
 * BRACS (6 cls): [Download Link](https://www.bracs.icar.cnr.it/download/)
 </small>
 
-First, download the necessary datasets. For demonstrations, we provide the example datasets [here](https://drive.google.com/drive/folders/15xlGg3HE4rVWz7ofg1rsgNwHGIFiO6Qa?usp=sharing). Download and unzip it to a local path, for example `/root/user/data/downstreams_demo`, then, change the directory path `dataset_root=/root/user/data/downstreams_demo`. The code will automatically extract features and perform evaluations.
+First, download the necessary datasets. For demonstrations, we provide the example datasets [here](https://drive.google.com/file/d/1dC5GP6hFxq95yxR_33QZAxHoZsuy9Bel/view?usp=sharing). Download and unzip it to a local path, for example `/root/user/data/downstreams_demo`, then, change the directory path `dataset_root=/root/user/data/downstreams_demo`. The code will automatically extract features and perform evaluations.
 
 
 The main file is `clip_benchmark.cli` and includes the following options:
