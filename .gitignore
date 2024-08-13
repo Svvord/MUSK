@@ -60,7 +60,7 @@ downloads
 *.pth
 *.spm
 *.zip
-*.json
 *.pt
 *.csv
-
+*.json
+!zero2_config.json
