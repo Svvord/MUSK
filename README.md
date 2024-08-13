@@ -193,7 +193,7 @@ python3 -m clip_benchmark.cli eval --pretrained_model models.txt \
         --num_workers 16 \
         --seed 41 \
         --dataset_root "/root/user/data/downstreams_demo" \
-        --output "./results/image_retrieval/benchmark_image_retrieval.json"
+        --output "./results/benchmark_image_retrieval.json"
 ```
 
 and more tasks in `./benchmarks/demo.ipynb`.
