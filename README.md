@@ -154,7 +154,7 @@ Here are some example commands:
 ```shell
 # >>>>>>>>>>> zero-shot cross-modal retrieval >>>>>>>>>>> #
  python3 -m clip_benchmark.cli eval --pretrained_model models.txt \
-        --dataset   "bookset_retrieval"  \
+        --dataset   "pathmmu_retrieval"  \
         --task "zeroshot_retrieval" \
         --batch_size 512 \
         --num_workers 16 \
@@ -185,7 +185,7 @@ done
 ```
 
 ```shell
-# >>>>>>>>>>> image retrieval >>>>>>>>>>> #
+# >>>>>>>>>>> zero-shot  image2image retrieval >>>>>>>>>>> #
 python3 -m clip_benchmark.cli eval --pretrained_model models.txt \
         --dataset   "unitopatho_retrieval" "bracs_retrieval" \
         --task "image_retrieval" \
