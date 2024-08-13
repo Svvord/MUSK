@@ -139,7 +139,7 @@ The main file is `clip_benchmark.cli` and includes the following options:
 - `--batch_size`: Sets the batch size for feature extraction.
 - `--output`: Specifies where to save the output results.
 
-Set the `models.txt` file with entries in the format: `(model_name, model_path)`. For example, if you want to run both MUSK and CONCH for comparison, your `models.txt` might look like this:
+Set the `models.txt` file with entries in the format: `(model_name, model_path)`. For example, if you want to run both MUSK and [CONCH](https://github.com/mahmoodlab/CONCH) for comparison, your `models.txt` might look like this:
 ```shell
 musk_large_patch16_384,/mnt/MUSK/musk/models/musk.pth
 conch,/mnt/models/conch/conch.pt
