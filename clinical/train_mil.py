@@ -121,6 +121,8 @@ if __name__ == "__main__":
             "ret_folds": ret_fold_list
             }
         }
+
+        os.makedirs("./workspace/results", exist_ok=True)
         
         with open(f"./workspace/results/{fname}.json", "a+") as f:
             json.dump(ret, f)
