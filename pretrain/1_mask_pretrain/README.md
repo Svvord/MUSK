@@ -9,6 +9,7 @@ This code demonstrates how to train the MUSK model using unimodal image and text
     - Download the required image tokenizer `--tokenizer_weight` [link](https://drive.google.com/file/d/1fVxFnIPVZirEdg9tQ2vfv7MfEBOX9FuE/view?usp=sharing) and specify its path.
   
 2. **Run the Pretraining Script**
-    - cd `./scripts` and execute the pretraining script `bash ./run_pathology_pretrain.sh` to train the MUSK model. The script allows for adjustment of the number of GPUs based on your available resources. By default, the script is configured for one node with 8 GPUs.
+    - cd `./scripts` and execute the pretraining script `bash ./run_pathology_pretrain.sh` to train the MUSK model. 
+    - The `--HOST_NUM` parameter specifies the total number of machines; `--HOST_GPU_NUM` indicates the total number of GPUs per machine; `--CHIEF_IP` is the IP address of the master machine; `--INDEX` is the index of the machine; `--PORT_ID` is the port id of communication.
 
 Monitor the log for `accuracy_mim` and `accuracy_mlm`. These metrics should increase steadily, indicating that the model is learning to recover the masked image tokens and text tokens.

@@ -4,14 +4,14 @@ export HOST_NUM=1
 export INDEX=0
 export CHIEF_IP=localhost
 export HOST_GPU_NUM=8
-
+export PORT_ID=1234
 
 DATA_Path="/path/to/quilt1m"
 SAVE_DIR="large_384_quilt1m_decoder_loss_v1"
 
 
 torchrun --nproc_per_node=${HOST_GPU_NUM} --nnodes=${HOST_NUM} --node_rank=${INDEX} \
-      --master_addr=${CHIEF_IP} --master_port=1639 ../run.py \
+      --master_addr=${CHIEF_IP} --master_port=${PORT_ID} ../run.py \
        --model musk_large_patch16_384 \
        --input_size 384 \
        --task quilt1m_pathcap \
